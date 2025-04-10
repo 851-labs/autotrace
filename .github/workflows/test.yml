@@ -1,0 +1,80 @@
+name: Test and Lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: Test and Lint
+    container:
+      image: debian:latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Ruby dependencies
+        run: |
+          apt-get update
+          apt-get install -y \
+            ruby \
+            ruby-dev \
+            bundler \
+            build-essential \
+            git \
+            libmagickcore-dev \
+            autotools-dev \
+            autopoint \
+            diffutils \
+            libtool \
+            intltool \
+            libpng-dev \
+            libexif-dev \
+            libtiff5-dev \
+            libjpeg-dev \
+            libxml2-dev \
+            libbz2-dev \
+            libpstoedit-dev \
+            libfreetype6-dev \
+            libpstoedit0c2a \
+            libbz2-1.0 \
+            libgd3 \
+            libffi-dev \
+            pkg-config \
+            curl \
+            wget
+
+      - name: Build and install Autotrace from source
+        # Following the same build process as in the Dockerfile
+        run: |
+          git clone https://github.com/autotrace/autotrace.git
+          cd autotrace
+          ./autogen.sh
+          ./configure --prefix=/usr
+          make
+          make install
+          ldconfig
+          cd ..
+
+          # Verify autotrace is installed
+          autotrace --version
+
+          # Check for required libraries
+          echo "Checking for required libraries:"
+          ldconfig -p | grep "libautotrace"
+
+      - name: Install Dependencies
+        run: |
+          # Install the same FFI version as in the Dockerfile
+          gem install ffi -v "~> 1.17.1"
+          # Install bundler and project dependencies
+          bundle install
+
+      - name: Run tests
+        run: bundle exec rake test
+
+      - name: Run Rubocop
+        run: bundle exec rubocop
