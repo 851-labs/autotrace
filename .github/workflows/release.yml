@@ -84,10 +84,29 @@ jobs:
           # Install bundler and project dependencies
           bundle install
 
-      - name: Set git safe directory
+      # Manual implementation of the steps from rubygems/release-gem action
+      - name: Set git configuration
         run: |
+          # Attribute commits to the last committer on HEAD
           git config --global --add safe.directory "$(pwd)"
+          git config --global user.email "$(git log -1 --pretty=format:'%ae')"
+          git config --global user.name "$(git log -1 --pretty=format:'%an')"
+          git remote set-url origin "https://x-access-token:${{ github.token }}@github.com/$GITHUB_REPOSITORY"
+        shell: bash
 
-      # Build and publish gem
-      - name: Release gem
-        uses: rubygems/release-gem@v1
+      - name: Configure trusted publishing credentials
+        uses: rubygems/configure-rubygems-credentials@v1.0.0
+
+      - name: Run release rake task
+        run: bundle exec rake release
+        shell: bash
+        env:
+          RUBYOPT: "-r./rubygems_attestation_patch.rb $RUBYOPT"
+
+      - name: Wait for release to propagate
+        run: |
+          # First install the gem to get access to rubygems-await
+          gem install rubygems-await
+          # Then wait for the package to be available
+          gem exec rubygems-await pkg/*.gem
+        shell: bash
