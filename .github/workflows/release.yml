@@ -7,27 +7,74 @@ on:
 
 jobs:
   push:
-    name: Push gem to RubyGems.org
     runs-on: ubuntu-latest
+    name: Push gem to RubyGems.org
+    container:
+      image: debian:latest
 
     permissions:
       id-token: write # IMPORTANT: this permission is mandatory for trusted publishing
       contents: write # IMPORTANT: this permission is required for `rake release` to push the release tag
 
     steps:
-      # Set up repository and Ruby
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 # Need full history for version determination
+      - uses: actions/checkout@v3
 
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: "3.3.5"
-          bundler-cache: true
+      - name: Install Ruby dependencies
+        run: |
+          apt-get update
+          apt-get install -y \
+            ruby \
+            ruby-dev \
+            bundler \
+            build-essential \
+            git \
+            libmagickcore-dev \
+            autotools-dev \
+            autopoint \
+            diffutils \
+            libtool \
+            intltool \
+            libpng-dev \
+            libexif-dev \
+            libtiff5-dev \
+            libjpeg-dev \
+            libxml2-dev \
+            libbz2-dev \
+            libpstoedit-dev \
+            libfreetype6-dev \
+            libpstoedit0c2a \
+            libbz2-1.0 \
+            libgd3 \
+            libffi-dev \
+            pkg-config \
+            curl \
+            wget
 
-      - name: Install libffi
-        run: sudo apt-get update && sudo apt-get install -y libffi-dev
+      - name: Build and install Autotrace from source
+        # Following the same build process as in the Dockerfile
+        run: |
+          git clone https://github.com/autotrace/autotrace.git
+          cd autotrace
+          ./autogen.sh
+          ./configure --prefix=/usr
+          make
+          make install
+          ldconfig
+          cd ..
+
+          # Verify autotrace is installed
+          autotrace --version
+
+          # Check for required libraries
+          echo "Checking for required libraries:"
+          ldconfig -p | grep "libautotrace"
+
+      - name: Install Dependencies
+        run: |
+          # Install the same FFI version as in the Dockerfile
+          gem install ffi -v "~> 1.17.1"
+          # Install bundler and project dependencies
+          bundle install
 
       # Build and publish gem
       - name: Release gem
