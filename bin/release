@@ -44,16 +44,17 @@ if ! git diff-index --quiet HEAD --; then
   fi
 fi
 
-# Get current version from gemspec file
-GEMSPEC_FILE=$(find . -name "*.gemspec" | head -n 1)
-if [ -z "$GEMSPEC_FILE" ]; then
-  echo -e "${RED}Error: No gemspec file found${NC}"
+# Find version.rb file
+VERSION_RB_FILE=$(find ./lib -name "version.rb" | head -n 1)
+if [ -z "$VERSION_RB_FILE" ]; then
+  echo -e "${RED}Error: No version.rb file found${NC}"
   exit 1
 fi
 
-CURRENT_VERSION=$(grep -oE "version\s*=\s*['\"]([0-9]+\.[0-9]+\.[0-9]+)['\"]" "$GEMSPEC_FILE" | grep -oE "[0-9]+\.[0-9]+\.[0-9]+")
+# Get current version from version.rb file
+CURRENT_VERSION=$(grep -oE "VERSION\s*=\s*['\"]([0-9]+\.[0-9]+\.[0-9]+)['\"]" "$VERSION_RB_FILE" | grep -oE "[0-9]+\.[0-9]+\.[0-9]+")
 if [ -z "$CURRENT_VERSION" ]; then
-  echo -e "${RED}Error: Could not find version in gemspec file${NC}"
+  echo -e "${RED}Error: Could not find VERSION in ${VERSION_RB_FILE}${NC}"
   exit 1
 fi
 
@@ -100,23 +101,21 @@ if [[ ! $REPLY =~ ^[Yy]$ ]]; then
   exit 1
 fi
 
-# Update version in gemspec
-sed -i.bak "s/version\s*=\s*['\"]${CURRENT_VERSION}['\"]/version = '${NEW_VERSION}'/" "$GEMSPEC_FILE"
-rm "${GEMSPEC_FILE}.bak"
-
-# Update version in version.rb file (if exists)
-VERSION_RB_FILE=$(find . -path "*/lib/*/version.rb" 2>/dev/null | head -n 1)
-if [ -n "$VERSION_RB_FILE" ]; then
-  sed -i.bak "s/VERSION\s*=\s*['\"]${CURRENT_VERSION}['\"]/VERSION = '${NEW_VERSION}'/" "$VERSION_RB_FILE"
-  rm "${VERSION_RB_FILE}.bak"
+# Get the gemspec file
+GEMSPEC_FILE=$(find . -name "*.gemspec" | head -n 1)
+if [ -z "$GEMSPEC_FILE" ]; then
+  echo -e "${RED}Error: No gemspec file found${NC}"
+  exit 1
 fi
+
+# Update version in version.rb file
+sed -i.bak "s/VERSION\s*=\s*['\"]${CURRENT_VERSION}['\"]/VERSION = \"${NEW_VERSION}\"/" "$VERSION_RB_FILE"
+rm "${VERSION_RB_FILE}.bak"
+
+echo -e "${GREEN}Updated version in ${VERSION_RB_FILE} to ${NEW_VERSION}${NC}"
 
 # Commit the version change
-git add "$GEMSPEC_FILE"
-if [ -n "$VERSION_RB_FILE" ]; then
-  git add "$VERSION_RB_FILE"
-fi
-
+git add "$VERSION_RB_FILE"
 git commit -m "Bump version to ${NEW_VERSION}"
 
 # Create a version tag
