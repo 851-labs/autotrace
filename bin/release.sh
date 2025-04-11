@@ -128,13 +128,13 @@ echo -e "${GREEN}Created commit and tag for version ${NEW_VERSION}${NC}"
 read -p "Push changes and tag to remote repository? (y/n) " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-  git push origin master
+  git push origin main
   git push origin "v${NEW_VERSION}"
   echo -e "${GREEN}Pushed changes and tag to remote repository${NC}"
   echo -e "${YELLOW}GitHub Actions workflow should now build and release the gem to RubyGems.org${NC}"
 else
   echo -e "${YELLOW}Remember to push the changes and tag yourself:${NC}"
-  echo "  git push origin master"
+  echo "  git push origin main"
   echo "  git push origin v${NEW_VERSION}"
 fi
 
