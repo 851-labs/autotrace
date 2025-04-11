@@ -128,8 +128,23 @@ cat "$VERSION_RB_FILE"
 
 echo -e "${GREEN}Updated version in ${VERSION_RB_FILE} to ${NEW_VERSION}${NC}"
 
-# Commit the version change
+# Run bundle to update dependencies
+echo -e "${GREEN}Running bundle update and install...${NC}"
+bundle update
+bundle install
+
+# Check if Gemfile.lock exists
+if [ -f "Gemfile.lock" ]; then
+  echo -e "${GREEN}Gemfile.lock updated${NC}"
+else
+  echo -e "${YELLOW}Note: Gemfile.lock not found${NC}"
+fi
+
+# Commit the version change and Gemfile.lock
 git add "$VERSION_RB_FILE"
+if [ -f "Gemfile.lock" ]; then
+  git add "Gemfile.lock"
+fi
 
 # Check if there are changes to commit
 if git diff-index --quiet HEAD --; then
