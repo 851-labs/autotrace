@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    autotrace (0.1.9)
+    autotrace (0.1.10)
       ffi (~> 1.17.1)
 
 GEM
@@ -53,4 +53,4 @@ DEPENDENCIES
   rubocop (~> 1.21)
 
 BUNDLED WITH
-   2.5.23
+   2.6.7
