@@ -108,14 +108,19 @@ if [ -z "$GEMSPEC_FILE" ]; then
   exit 1
 fi
 
-# Check if we're on macOS or Linux for different sed behavior
-if [[ "$(uname)" == "Darwin" ]]; then
-  # macOS version of sed
-  sed -i '' "s/VERSION\s*=\s*['\"]${CURRENT_VERSION}['\"]/VERSION = \"${NEW_VERSION}\"/" "$VERSION_RB_FILE"
-else
-  # Linux version of sed
-  sed -i "s/VERSION\s*=\s*['\"]${CURRENT_VERSION}['\"]/VERSION = \"${NEW_VERSION}\"/" "$VERSION_RB_FILE"
-fi
+# Create a backup of the original file
+cp "$VERSION_RB_FILE" "${VERSION_RB_FILE}.bak"
+
+# Update the version.rb file using awk for better pattern matching
+awk -v ver="$NEW_VERSION" '{
+  if ($0 ~ /VERSION *=/) {
+    gsub(/"[0-9]+\.[0-9]+\.[0-9]+"/, "\"" ver "\"")
+  }
+  print $0
+}' "${VERSION_RB_FILE}.bak" > "$VERSION_RB_FILE"
+
+# Remove backup
+rm "${VERSION_RB_FILE}.bak"
 
 # Verify the change was made
 echo "File content after change:"
@@ -129,22 +134,8 @@ git add "$VERSION_RB_FILE"
 # Check if there are changes to commit
 if git diff-index --quiet HEAD --; then
   echo -e "${RED}Error: No changes detected in git after version update${NC}"
-  echo "Trying direct file modification as fallback..."
-  
-  # Direct file modification as fallback
-  echo '# frozen_string_literal: true
-
-module Autotrace
-  VERSION = "'"$NEW_VERSION"'"
-end
-' > "$VERSION_RB_FILE"
-  
-  git add "$VERSION_RB_FILE"
-  
-  if git diff-index --quiet HEAD --; then
-    echo -e "${RED}Error: Still no changes detected after direct file modification${NC}"
-    exit 1
-  fi
+  echo -e "${RED}Please check file permissions and try again${NC}"
+  exit 1
 fi
 
 git commit -m "Bump version to ${NEW_VERSION}"

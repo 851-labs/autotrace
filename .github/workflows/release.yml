@@ -17,7 +17,12 @@ jobs:
       contents: write # IMPORTANT: this permission is required for `rake release` to push the release tag
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Update git
+        run: |
+          apt-get update
+          apt-get install -y git
+
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           persist-credentials: true
