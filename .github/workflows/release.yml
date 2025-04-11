@@ -101,7 +101,7 @@ jobs:
         run: bundle exec rake release
         shell: bash
         env:
-          RUBYOPT: "-r./rubygems_attestation_patch.rb $RUBYOPT"
+          RUBYOPT: "-r./rubygems_attestation_patch.rb"
 
       - name: Wait for release to propagate
         run: |
