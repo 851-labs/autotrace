@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    autotrace (0.1.11)
+    autotrace (0.1.12)
       ffi (~> 1.17.1)
 
 GEM
