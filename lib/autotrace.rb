@@ -167,12 +167,6 @@ module Autotrace
       # Close
       FFI::CStdLib.fclose(c_file)
 
-      # (Optional) free memory
-      FFI.at_fitting_opts_free(fitting_opts_ptr)
-      FFI.at_output_opts_free(output_opts_ptr)
-      FFI.at_bitmap_free(bitmap)
-      FFI.at_splines_free(splines)
-
       File.open(output_file, "rb")
     end
 
